@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monkey Stacks - Tower Puzzle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2em;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-bar {
+            display: flex;
+            gap: 2em;
+            justify-content: center;
+            margin-bottom: 1.5em;
+            font-size: 1.2em;
+        }
+
+        .game-area {
+            display: flex;
+            justify-content: center;
+            gap: 3em;
+            margin: 2em 0;
+            perspective: 1000px;
+            align-items: flex-end;
+        }
+
+        .peg-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2em;
+            justify-content: flex-end;
+            height: 500px;
+            width: 120px;
+            flex-shrink: 0;
+        }
+
+        .apple {
+            font-size: 2.5em;
+            height: 2.5em;
+            width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .apple-placeholder {
+            height: 2.5em;
+            width: 120px;
+        }
+
+        .tree {
+            width: 3px;
+            height: 8em;
+            background: #8B4513;
+            position: relative;
+        }
+
+        .peg {
+            width: 120px;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column-reverse;
+            padding: 10px;
+            gap: 3px;
+            overflow: hidden;
+            align-items: center;
+            justify-content: flex-start;
+            flex-shrink: 0;
+        }
+
+        .peg:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+
+        .peg.selected {
+            background: rgba(255, 200, 0, 0.3);
+            border-color: #ffc800;
+            box-shadow: 0 0 20px rgba(255, 200, 0, 0.5);
+        }
+
+        .peg.invalid {
+            animation: shake 0.3s;
+            border-color: #ff4444;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes appleCollect {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.5); opacity: 0; }
+        }
+
+        .apple.collected {
+            animation: appleCollect 0.6s ease-out forwards;
+        }
+
+        .monkey {
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            cursor: grab;
+            transition: transform 0.15s;
+            border: 2px solid rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+        }
+
+        .monkey:hover {
+            transform: scale(1.05);
+            cursor: grab;
+        }
+
+        .monkey.size-1 {
+            width: 40px;
+            height: 40px;
+            background: #FF6B6B;
+        }
+
+        .monkey.size-2 {
+            width: 55px;
+            height: 55px;
+            background: #4ECDC4;
+        }
+
+        .monkey.size-3 {
+            width: 70px;
+            height: 70px;
+            background: #45B7D1;
+        }
+
+        .monkey.size-4 {
+            width: 85px;
+            height: 85px;
+            background: #FFA07A;
+        }
+
+        .monkey.size-5 {
+            width: 100px;
+            height: 100px;
+            background: #98D8C8;
+        }
+
+        .peg-label {
+            font-weight: bold;
+            margin-top: 0.5em;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            margin-top: 2em;
+            display: flex;
+            gap: 1em;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid #fff;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .difficulty-selector {
+            margin-bottom: 1.5em;
+        }
+
+        .difficulty-selector button {
+            margin: 0 0.5em;
+            padding: 8px 20px;
+        }
+
+        .difficulty-selector button.active {
+            background: rgba(255, 200, 0, 0.6);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 3em;
+            border: 3px solid #ffc800;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            color: #fff;
+        }
+
+        .modal-content h2 {
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .modal-content p {
+            font-size: 1.2em;
+            margin-bottom: 1.5em;
+        }
+
+        .move-counter {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ffc800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐒 MONKEY STACKS</h1>
+
+        <div class="info-bar">
+            <div>Moves: <span id="moveCount" class="move-counter">0</span></div>
+            <div>Level: <span id="levelDisplay">Easy (3 monkeys)</span></div>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="difficulty-btn active" onclick="setDifficulty(3)">Easy (3)</button>
+            <button class="difficulty-btn" onclick="setDifficulty(4)">Medium (4)</button>
+            <button class="difficulty-btn" onclick="setDifficulty(5)">Hard (5)</button>
+        </div>
+
+        <div class="game-area">
+            <div class="peg-container">
+                <div class="apple-placeholder"></div>
+                <div class="tree"></div>
+                <div class="peg" id="peg-0"></div>
+                <div class="peg-label">Peg 1</div>
+            </div>
+
+            <div class="peg-container">
+                <div class="apple" id="apple-1">🍎</div>
+                <div class="tree"></div>
+                <div class="peg" id="peg-1"></div>
+                <div class="peg-label">Peg 2</div>
+            </div>
+
+            <div class="peg-container">
+                <div class="apple" id="apple-2">🍎</div>
+                <div class="tree"></div>
+                <div class="peg" id="peg-2"></div>
+                <div class="peg-label">Peg 3</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="resetGame()">Reset Level</button>
+            <button onclick="showRules()">How to Play</button>
+        </div>
+
+        <div style="margin-top: 1.5em; font-size: 1em; opacity: 0.9;">
+            Press <strong>1</strong>, <strong>2</strong>, <strong>3</strong> to select pegs<br>
+            (Press once to select FROM, then press another number to select TO)
+        </div>
+    </div>
+
+    <div class="modal" id="winModal">
+        <div class="modal-content">
+            <h2>🎉 YOU WIN!</h2>
+            <p id="winText"></p>
+            <button onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <div class="modal" id="rulesModal">
+        <div class="modal-content">
+            <h2>📖 How to Play</h2>
+            <p style="text-align: left; font-size: 1em;">
+                <strong>Goal:</strong> Collect both apples! 🍎<br><br>
+                <strong>Rules:</strong><br>
+                • Only move one monkey at a time<br>
+                • Can only move the top monkey from a stack<br>
+                • A smaller monkey can only go on top of a larger monkey<br>
+                • When all monkeys are properly stacked on a peg with an apple, it's consumed!<br><br>
+                <strong>Strategy:</strong> Stack all monkeys on peg 2 to collect the first apple, then move them all to peg 3 for the second apple!
+            </p>
+            <button onclick="closeRules()">Got It!</button>
+        </div>
+    </div>
+
+    <script>
+        let pegs = [[], [], []];
+        let selectedPeg = null;
+        let moveCount = 0;
+        let monkeyCount = 3;
+        let minMovesRequired = 0;
+        let consumedApples = [false, false]; // Pegs 1 and 2 (indices 1 and 2)
+
+        function calculatePegHeight() {
+            // Monkey sizes: 1->40px, 2->55px, 3->70px, 4->85px, 5->100px
+            const monkeySizes = [40, 55, 70, 85, 100];
+            let totalHeight = 0;
+
+            // Sum the heights of all monkeys for this level
+            for (let i = 0; i < monkeyCount; i++) {
+                totalHeight += monkeySizes[i];
+            }
+
+            // Add gaps (monkeyCount - 1 gaps of 3px each) and padding (10px top + 10px bottom)
+            const gaps = (monkeyCount - 1) * 3;
+            const padding = 20;
+            return totalHeight + gaps + padding;
+        }
+
+        function setPegHeight() {
+            const height = calculatePegHeight();
+            const pegs = document.querySelectorAll('.peg');
+            pegs.forEach(peg => {
+                peg.style.height = height + 'px';
+            });
+        }
+
+        function initGame() {
+            pegs = [[], [], []];
+            moveCount = 0;
+            selectedPeg = null;
+            consumedApples = [false, false];
+
+            // Set peg height based on difficulty
+            setPegHeight();
+
+            // Create monkeys - size 1 is smallest, size N is largest
+            for (let i = monkeyCount; i >= 1; i--) {
+                pegs[0].push(i);
+            }
+
+            minMovesRequired = Math.pow(2, monkeyCount) - 1;
+
+            // Reset apple visuals
+            document.getElementById('apple-1').classList.remove('collected');
+            document.getElementById('apple-2').classList.remove('collected');
+
+            updateDisplay();
+            render();
+        }
+
+        function setDifficulty(num) {
+            monkeyCount = num;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const labels = { 3: 'Easy (3 monkeys)', 4: 'Medium (4 monkeys)', 5: 'Hard (5 monkeys)' };
+            document.getElementById('levelDisplay').textContent = labels[num];
+
+            initGame();
+        }
+
+        function resetGame() {
+            closeWinModal();
+            initGame();
+        }
+
+        function attemptMove(fromPeg, toPeg) {
+            if (pegs[fromPeg].length === 0) {
+                showInvalidMoveFeedback(toPeg);
+                return false;
+            }
+
+            const monkey = pegs[fromPeg][pegs[fromPeg].length - 1];
+            const targetTop = pegs[toPeg].length === 0 ? Infinity : pegs[toPeg][pegs[toPeg].length - 1];
+
+            if (monkey < targetTop) {
+                // Valid move
+                pegs[fromPeg].pop();
+                pegs[toPeg].push(monkey);
+                moveCount++;
+                updateDisplay();
+
+                // Check for apple consumption
+                checkAppleConsumption();
+
+                // Check win condition
+                if (consumedApples[0] && consumedApples[1]) {
+                    showWinModal();
+                }
+
+                return true;
+            } else {
+                // Invalid move - visual feedback
+                showInvalidMoveFeedback(toPeg);
+                return false;
+            }
+        }
+
+        function checkAppleConsumption() {
+            // Check peg 1 (index 1)
+            if (!consumedApples[0] && pegs[1].length === monkeyCount && isProperlyStacked(pegs[1])) {
+                consumedApples[0] = true;
+                document.getElementById('apple-1').classList.add('collected');
+            }
+
+            // Check peg 2 (index 2)
+            if (!consumedApples[1] && pegs[2].length === monkeyCount && isProperlyStacked(pegs[2])) {
+                consumedApples[1] = true;
+                document.getElementById('apple-2').classList.add('collected');
+            }
+        }
+
+        function showInvalidMoveFeedback(pegIndex) {
+            const pegEl = document.getElementById(`peg-${pegIndex}`);
+            pegEl.classList.add('invalid');
+            setTimeout(() => {
+                pegEl.classList.remove('invalid');
+            }, 300);
+        }
+
+        function isProperlyStacked(peg) {
+            if (peg.length !== monkeyCount) return false;
+            for (let i = 0; i < peg.length - 1; i++) {
+                if (peg[i] <= peg[i + 1]) return false;
+            }
+            return true;
+        }
+
+        function updateDisplay() {
+            document.getElementById('moveCount').textContent = moveCount;
+        }
+
+        function render() {
+            for (let p = 0; p < 3; p++) {
+                const pegEl = document.getElementById(`peg-${p}`);
+                pegEl.innerHTML = '';
+                pegEl.classList.toggle('selected', selectedPeg === p);
+
+                for (let monkey of pegs[p]) {
+                    const monkeyEl = document.createElement('div');
+                    monkeyEl.className = `monkey size-${monkey}`;
+                    monkeyEl.textContent = '🐒';
+                    pegEl.appendChild(monkeyEl);
+                }
+            }
+        }
+
+        function showWinModal() {
+            const optimal = minMovesRequired * 3; // Roughly 3x for collecting both apples
+            const message = moveCount <= minMovesRequired
+                ? `Perfect! ${moveCount} moves (near optimal!)`
+                : `Apples collected in ${moveCount} moves!`;
+            document.getElementById('winText').textContent = message;
+            document.getElementById('winModal').classList.add('show');
+        }
+
+        function closeWinModal() {
+            document.getElementById('winModal').classList.remove('show');
+        }
+
+        function showRules() {
+            document.getElementById('rulesModal').classList.add('show');
+        }
+
+        function closeRules() {
+            document.getElementById('rulesModal').classList.remove('show');
+        }
+
+        // Keyboard controls: 1, 2, 3 for pegs
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1' || e.key === '2' || e.key === '3') {
+                const pegIndex = parseInt(e.key) - 1;
+
+                if (selectedPeg === null) {
+                    // First press - select peg to move FROM
+                    selectedPeg = pegIndex;
+                    render();
+                } else if (selectedPeg === pegIndex) {
+                    // Same peg pressed - deselect
+                    selectedPeg = null;
+                    render();
+                } else {
+                    // Second press - attempt move FROM selectedPeg TO pegIndex
+                    attemptMove(selectedPeg, pegIndex);
+                    selectedPeg = null;
+                    render();
+                }
+            }
+        });
+
+        // Start game
+        initGame();
+    </script>
+</body>
+</html>
